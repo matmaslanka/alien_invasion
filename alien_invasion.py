@@ -5,6 +5,7 @@ import pygame
 
 from settings import Settings
 from game_stats import GameStats
+from button import Button
 from ship import Ship
 from bullet import Bullet
 from ufo import Ufo
@@ -34,6 +35,9 @@ class AlienInvasion:
 
         self._create_fleet()
 
+        # Utworzenie przycisku gra
+        self.play_button = Button(self, "NEW GAME")
+
     def run_game(self):
         """Rozpoczęcie pętli głównej gry"""
         while True:
@@ -55,6 +59,29 @@ class AlienInvasion:
                 self._check_keydown_events(event)
             elif event.type == pygame.KEYUP:
                 self._check_keyup_evens(event)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                self._check_play_button(mouse_pos)
+
+    def _check_play_button(self, mouse_pos):
+        """Rozpoczęcie nowej gry po kliknięciu przycisku przez użytkownika"""
+        button_clicked = self.play_button.rect.collidepoint(mouse_pos)
+        if button_clicked and not self.stats.game_active:
+            # Wyzerowanie ustawień dotyczących gry.
+            self.settings.initialize_dynamic_settings()
+            # Wyzerowanie danych statystycznych gry.
+            self.stats.reset_stats()
+            self.stats.game_active = True
+            # Ukrycie kursora myszy.
+            pygame.mouse.set_visible(False)
+
+            # Usunięcie zawartości list ufos i bullets
+            self.ufos.empty()
+            self.bullets.empty()
+
+            #Utworzenie nowej floty i wyśrodkowanie statku
+            self._create_fleet()
+            self.ship.center_ship()
 
     def _check_keydown_events(self, event):
         if event.key == pygame.K_RIGHT:
@@ -100,8 +127,8 @@ class AlienInvasion:
             # pozbycie się istniejących pocisków i utworzenie nowej floty
             self.bullets.empty()
             self._create_fleet()
-            # Obcy przyspieszają o 0,2
-            self.settings.ufo_speed += 0.5
+            # Gra przyspiesz
+            self.settings.increase_speed()
 
     def _update_ufos(self):
         """Sprawdzenia czy flota znajduje się przy krawiędzi a następnie uaktualnienie położenia wszystkich obcych
@@ -135,6 +162,7 @@ class AlienInvasion:
 
         else:
             self.stats.game_active = False
+            pygame.mouse.set_visible(True)
 
     def _check_ufos_bottom(self):
         """Sprawdzanie, czy jakikolwiek obcy dotarł do dolnej krawędzi ekranu."""
@@ -196,6 +224,10 @@ class AlienInvasion:
             bullet.draw_bullet()
 
         self.ufos.draw(self.screen)
+
+        #Wyświetlanie przycisku tylko wtedy gdy gra jest nieaktywna
+        if not self.stats.game_active:
+            self.play_button.draw_button()
 
         pygame.display.flip()
 
